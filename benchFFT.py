@@ -47,19 +47,22 @@ def plot_results(datas, factor=None, algo='FFT'):
 
     plt.savefig(algo + '.png')
     
-    
-def run(repeat, size, mkl=True):
+##assumes mkl FFTs are run before nonMKL FFTS
+def run(a, repeat, size, mkl=True, mkloutput=[]):
+    bs = []
     args = tuple(1 * [size])
-    a = numpy.random.randn(*args) + 1j * numpy.random.randn(*args)
-    a = a.astype(numpy.complex64)
     start_time = time.time()
-    for dummy in xrange(repeat):
+    for i in xrange(repeat):
         if mkl: 
             b = numpy.fft.fftn(a)
         else:
             b = numpy.fft.fftpack.fftn(a)
+            try:    assert b == mkloutput[i]
+            except: print "\nmkl output: %f\nnon mkl output: %f" % (mkloutput[i], b)
+        bs.append(b)
+    if mkl==False:  assert len(bs) == len(mkloutput)
     time_taken = time.time() - start_time
-    return time_taken
+    return time_taken, bs
     
     
 def main():  
@@ -80,15 +83,18 @@ def main():
              trials = 10
              
          mflop = 5.0*size*numpy.log2(size)    
-         gglop = mflop / 1000
+         gflop = mflop / 1000
          
-         s = run(trials, size)
+         a = numpy.random.randn(*args) + 1j * numpy.random.randn(*args)
+         a = a.astype(numpy.complex64)
+         
+         s, output = run(a, trials, size)
          avg_ms = (s/trials) * 1000000
-         dataMKL.append(numpy.asarray([n, gglop/avg_ms ]))    
+         dataMKL.append(numpy.asarray([n, gflop/avg_ms ]))    
        
-         s2 = run(trials, size, mkl=False)
+         s2, output2 = run(a, trials, size, mkl=False, output)
          avg_ms = (s2/trials) * 1000000
-         dataNoMKL.append(numpy.asarray([n, gglop/avg_ms ]))
+         dataNoMKL.append(numpy.asarray([n, gflop/avg_ms ]))
          print '%8i %8i %12.4fs %12.4fs' % (trials, n, s, s2)
          
      datas = numpy.asarray([numpy.asarray(dataNoMKL),numpy.asarray(dataMKL)])

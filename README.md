@@ -15,4 +15,3 @@ The FFT benchmark results were conducted on a mid-2013 Dell XPS with an Intel Co
 
 ![NumExpr](../../raw/master/NumExpr.png)
 
-![FFT](../../raw/master/FFT.png)
